@@ -1,0 +1,571 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[34]:
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import itertools
+import seaborn as sns
+import warnings
+from scipy.stats import kendalltau
+warnings.filterwarnings("ignore")
+
+heart = pd.read_csv('heart1234.csv')
+heart.columns 
+
+
+# In[35]:
+
+
+heart.head()
+
+
+# In[36]:
+
+
+print("Heart data set dimensions : {}".format(heart.shape))
+
+
+# In[37]:
+
+
+heart.groupby('DEATH_EVENT').size()
+
+
+# In[38]:
+
+
+heart.isnull().sum()
+
+
+# In[39]:
+
+
+heart.isna().sum()
+
+
+# In[40]:
+
+
+from scipy.stats import skew
+
+
+# In[41]:
+
+
+for col in heart:
+    print(col)
+    print(skew(heart[col]))
+    
+    plt.figure()
+    sns.distplot(heart[col])
+    plt.show()
+
+
+# In[42]:
+
+
+skew = heart.skew()
+print(skew)
+
+
+# In[43]:
+
+
+#heart.corr()
+plt. ax = plt.subplots(figsize=(12,12))
+sns.heatmap(heart.corr(),annot=True, annot_kws={'size':10})
+plt.show()
+
+
+# In[44]:
+
+
+from scipy.stats import skew
+
+heart["creatinine_phosphokinase"] = np.cbrt(heart["creatinine_phosphokinase"])
+heart["serum_creatinine"] = np.cbrt(heart["serum_creatinine"])
+#heart["serum_sodium"] = np.cbrt(heart["serum_sodium"])
+
+
+# In[45]:
+
+
+from scipy.stats import skew
+
+
+# In[46]:
+
+
+for col in heart:
+    print(col)
+    print(skew(heart[col]))
+    
+    plt.figure()
+    sns.distplot(heart[col])
+    plt.show()
+
+
+# In[47]:
+
+
+skew = heart.skew()
+print(skew)
+
+
+# In[48]:
+
+
+#heart.corr()
+plt. ax = plt.subplots(figsize=(12,12))
+sns.heatmap(heart.corr(),annot=True, annot_kws={'size':10})
+plt.show()
+
+
+# In[49]:
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import kendalltau
+
+#heart = pd.read_csv('heart1234.csv')
+
+feature_names = ['age', 'anaemia', 'creatinine_phosphokinase', 'diabetes', 'ejection_fraction', 
+                    'high_blood_pressure', 'platelets', 'serum_creatinine', 'serum_sodium', 
+                    'sex', 'smoking', 'DEATH_EVENT']
+
+# Calculate Kendall's tau for each feature with the target variable
+kendall_correlations = {}
+for col in feature_names:
+    tau, _ = kendalltau(heart[col], heart['DEATH_EVENT'])
+    kendall_correlations[col] = abs(tau)
+
+# Convert the dictionary to a DataFrame for easier plotting
+kendall_heart = pd.DataFrame.from_dict(kendall_correlations, orient='index', columns=['Kendall_Tau'])
+
+# Sort the DataFrame based on Kendall's tau values
+kendall_heart_sorted = kendall_heart.sort_values(by='Kendall_Tau', ascending=False)
+
+
+# In[50]:
+
+
+#Data Imputation
+#heart_mod = heart[(heart.serum_creatinine != 0) & (heart.age != 0) & (heart.high_blood_pressure != 0) & (heart.anaemia != 0) & (heart.creatinine_phosphokinase != 0)]
+
+
+# In[51]:
+
+
+kendall_heart
+
+
+# In[52]:
+
+
+kendall_heart_sorted
+
+
+# In[53]:
+
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x=kendall_heart_sorted['Kendall_Tau'], y=kendall_heart_sorted.index, palette='viridis')
+plt.title("Kendall's Rank Correlation Coefficients with DEATH_EVENT")
+plt.xlabel("Kendall's Tau")
+plt.ylabel("Features")
+plt.show()
+
+
+# In[83]:
+
+
+#Scattered Graph
+fig = plt.figure(figsize = (8,8))
+ax = fig.gca()
+sns.scatterplot(x= "age", y= "ejection_fraction" , hue="DEATH_EVENT",data=heart)
+plt.title(" age vs ejection_fraction",fontsize =10)
+plt.show()
+
+
+# In[55]:
+
+
+from sklearn.model_selection import train_test_split
+
+train, test = train_test_split(heart, test_size=0.30)
+
+print(train.shape)
+print(test.shape)
+
+print(heart.shape)
+
+
+# In[56]:
+
+
+#feature_names = ['age', 'anaemia', 'creatinine_phosphokinase', 'diabetes',
+       #'ejection_fraction', 'high_blood_pressure', 'platelets',
+       #'serum_creatinine', 'serum_sodium', 'sex', 'smoking', 'time',
+       #'DEATH_EVENT']
+feature_names = ['serum_creatinine', 'ejection_fraction' ]
+
+X = heart[feature_names]
+y = heart.DEATH_EVENT
+
+
+# In[57]:
+
+
+from sklearn.metrics import mean_squared_error,confusion_matrix, precision_score, recall_score, auc,roc_curve
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+#from sklearn.ensemble import GradientBoostingClassifier
+#from sklearn.tree import DecisionTreeClassifier
+
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn import preprocessing
+
+
+# In[58]:
+
+
+models = []
+
+
+models.append(('RF', RandomForestClassifier()))
+models.append(('LR', LogisticRegression()))
+models.append(('GNB', GaussianNB()))
+models.append(('SVC', SVC()))
+models.append(('KNN', KNeighborsClassifier()))
+
+#models.append(('DT', DecisionTreeClassifier()))
+#models.append(('GB', GradientBoostingClassifier()))
+
+
+# In[59]:
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix
+
+
+# In[60]:
+
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify = heart.DEATH_EVENT, random_state=0)
+
+
+# In[61]:
+
+
+from sklearn.ensemble import RandomForestClassifier
+model=RandomForestClassifier()
+
+model.fit(X_train, y_train)
+y_predict=model.predict(X_test)
+
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_test, y_predict))
+print(confusion_matrix(y_test, y_predict))
+
+
+# In[62]:
+
+
+#from sklearn.ensemble import GradientBoostingClassifier
+#model=GradientBoostingClassifier()
+
+#model.fit(X_train, y_train)
+#y_predict=model.predict(X_test)
+
+
+#from sklearn.metrics import classification_report, confusion_matrix
+
+#print(classification_report(y_test, y_predict))
+#print(confusion_matrix(y_test, y_predict))
+
+
+# In[63]:
+
+
+from sklearn.linear_model import LogisticRegression
+model=LogisticRegression()
+
+model.fit(X_train, y_train)
+y_predict=model.predict(X_test)
+
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_test, y_predict))
+print(confusion_matrix(y_test, y_predict))
+
+
+# In[64]:
+
+
+#from sklearn.tree import DecisionTreeClassifier
+
+#model=DecisionTreeClassifier()
+
+#model.fit(X_train, y_train)
+#y_predict=model.predict(X_test)
+
+
+#from sklearn.metrics import classification_report, confusion_matrix
+
+#print(classification_report(y_test, y_predict))
+#print(confusion_matrix(y_test, y_predict))
+
+
+# In[65]:
+
+
+from sklearn.neighbors import KNeighborsClassifier
+
+model=KNeighborsClassifier(n_neighbors=5)
+
+model.fit(X_train, y_train)
+y_predict=model.predict(X_test)
+
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_test, y_predict))
+print(confusion_matrix(y_test, y_predict))
+
+
+# In[66]:
+
+
+from sklearn.naive_bayes import GaussianNB
+model=GaussianNB()
+
+model.fit(X_train, y_train)
+y_predict=model.predict(X_test)
+
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_test, y_predict))
+print(confusion_matrix(y_test, y_predict))
+
+
+# In[67]:
+
+
+from sklearn import svm
+
+model = svm.SVC().fit(X_train,y_train)
+y_predict =model.predict(X_test)
+print(confusion_matrix(y_test,y_predict))
+print(classification_report(y_test,y_predict))
+
+
+# In[68]:
+
+
+MLA = [RandomForestClassifier(),LogisticRegression(), GaussianNB(),svm.SVC(), KNeighborsClassifier()] 
+
+
+# In[69]:
+
+
+MLA_columns = []
+MLA_compare = pd.DataFrame(columns = MLA_columns)
+
+
+row_index = 0
+for alg in MLA:
+    
+    
+    predicted = alg.fit(X_train, y_train).predict(X_test)
+    fp, tp, th = roc_curve(y_test, predicted)
+    MLA_name = alg.__class__.__name__
+    MLA_compare.loc[row_index, 'MLA Name'] = MLA_name
+    MLA_compare.loc[row_index, 'MLA Train Accuracy'] = round(alg.score(X_train, y_train), 4)
+    MLA_compare.loc[row_index, 'MLA Test Accuracy'] = round(alg.score(X_test, y_test), 4)
+    MLA_compare.loc[row_index, 'MLA Precission'] = precision_score(y_test, predicted)
+    MLA_compare.loc[row_index, 'MLA Recall'] = recall_score(y_test, predicted)
+    MLA_compare.loc[row_index, 'MLA AUC'] = auc(fp, tp)
+
+    row_index+=1
+    
+MLA_compare.sort_values(by = ['MLA Test Accuracy'], ascending = False, inplace = True)    
+MLA_compare
+
+
+# In[70]:
+
+
+plt.subplots(figsize=(10,4))
+sns.barplot(x="MLA Name", y="MLA Train Accuracy",data=MLA_compare,palette='hot',edgecolor=sns.color_palette('dark',7))
+plt.xticks(rotation=90)
+plt.title('MLA Train Accuracy Comparison')
+plt.show()
+
+
+# In[71]:
+
+
+plt.subplots(figsize=(10,4))
+sns.barplot(x="MLA Name", y="MLA Test Accuracy",data=MLA_compare,palette='hot',edgecolor=sns.color_palette('dark',7))
+plt.xticks(rotation=90)
+plt.title('MLA Test Accuracy Comparison')
+plt.show()
+
+
+# In[72]:
+
+
+plt.subplots(figsize=(10,4))
+sns.barplot(x="MLA Name", y="MLA Precission",data=MLA_compare,palette='hot',edgecolor=sns.color_palette('dark',7))
+plt.xticks(rotation=90)
+plt.title('MLA Precission Comparison')
+plt.show()
+
+
+# In[73]:
+
+
+plt.subplots(figsize=(10,4))
+sns.barplot(x="MLA Name", y="MLA Recall",data=MLA_compare,palette='hot',edgecolor=sns.color_palette('dark',7))
+plt.xticks(rotation=90)
+plt.title('MLA Recall Comparison')
+plt.show()
+
+
+# In[74]:
+
+
+plt.subplots(figsize=(10,4))
+sns.barplot(x="MLA Name", y="MLA AUC",data=MLA_compare,palette='hot',edgecolor=sns.color_palette('dark',7))
+plt.xticks(rotation=90)
+plt.title('MLA AUC Comparison')
+plt.show()
+
+
+# In[75]:
+
+
+index = 1
+for alg in MLA:
+    
+    
+    predicted = alg.fit(X_train, y_train).predict(X_test)
+    fp, tp, th = roc_curve(y_test, predicted)
+    roc_auc_mla = auc(fp, tp)
+    MLA_name = alg.__class__.__name__
+    plt.plot(fp, tp, lw=2, alpha=0.3, label='ROC %s (AUC = %0.2f)'  % (MLA_name, roc_auc_mla))
+   
+    index+=1
+
+plt.title('ROC Curve comparison')
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+plt.plot([0,1],[0,1],'r--')
+plt.xlim([0,1])
+plt.ylim([0,1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')    
+plt.show()
+
+
+# In[76]:
+
+
+names = []
+scores = []
+
+for name, model in models:
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    
+    scores.append(accuracy_score(y_test, y_pred))
+    names.append(name)
+    
+    tr_split = pd.DataFrame({'Name': names, 'Score': scores})
+
+    print(tr_split)
+
+
+# In[77]:
+
+
+names = []
+scores = []
+
+axis = sns.barplot(x = 'Name', y = 'Score', data = tr_split)
+axis.set(xlabel='Classifier', ylabel='Accuracy')
+
+for p in axis.patches:
+    height = p.get_height()
+    axis.text(p.get_x() + p.get_width()/2, height + 0.005, '{:1.4f}'.format(height), ha="center") 
+    
+plt.show()
+
+
+# In[78]:
+
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+
+# In[79]:
+
+
+names = []
+scores = []
+
+for name, model in models:
+    
+    kfold = KFold(n_splits=10, shuffle=True, random_state=10) 
+    score = cross_val_score(model, X, y, cv=kfold, scoring='accuracy').mean()
+    
+    names.append(name)
+    #kf_cross_val = pd.DataFrame({'Name': names, 'Score': scores})
+    scores.append(score)
+    kf_cross_val = pd.DataFrame({'Name': names, 'Score': scores})
+    print(kf_cross_val)
+
+
+# In[80]:
+
+
+axis = sns.barplot(x = 'Name', y = 'Score', data = kf_cross_val)
+axis.set(xlabel='Classifier', ylabel='Accuracy')
+
+for p in axis.patches:
+    height = p.get_height()
+    axis.text(p.get_x() + p.get_width()/2, height + 0.005, '{:1.4f}'.format(height), ha="center") 
+    
+plt.show()
+
+
+# In[84]:
+
+
+MLA = [RandomForestClassifier(),LogisticRegression(), GaussianNB(),svm.SVC(), KNeighborsClassifier()] 
+
+
+# In[ ]:
+
+
+
+
